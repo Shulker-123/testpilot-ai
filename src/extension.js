@@ -1,21 +1,56 @@
 /**
  * TestPilot - Automated Unit Test Generation & Coverage Analysis
- * Visual Studio Code Extension Entry Point (Core Activation)
+ * Visual Studio Code Extension Entry Point
  * Author: Shulker-123
  */
 
 const vscode = require('vscode');
 
-function activate(context) {
-    console.log('[TestPilot] Extension activated successfully.');
+class TestPilotCodeLensProvider {
+    provideCodeLenses(document, token) {
+        const codeLenses = [];
+        const text = document.getText();
+        const regex = /(?:function\s+([a-zA-Z0-9_$]+)|(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>)/g;
+        let match;
 
-    const generateCmd = vscode.commands.registerCommand('testpilot.generateTests', async (uri) => {
+        while ((match = regex.exec(text)) !== null) {
+            const funcName = match[1] || match[2];
+            const position = document.positionAt(match.index);
+            const range = new vscode.Range(position, position);
+
+            const cmd = {
+                title: `$(beaker) TestPilot: Generate Tests for ${funcName}`,
+                command: 'testpilot.generateTests',
+                arguments: [{ document, funcName, line: position.line }]
+            };
+            codeLenses.push(new vscode.CodeLens(range, cmd));
+        }
+
+        return codeLenses;
+    }
+}
+
+function activate(context) {
+    console.log('[TestPilot] Extension activated.');
+
+    const codelensDisposable = vscode.languages.registerCodeLensProvider(
+        [{ scheme: 'file', language: 'javascript' }, { scheme: 'file', language: 'typescript' }],
+        new TestPilotCodeLensProvider()
+    );
+    context.subscriptions.push(codelensDisposable);
+
+    const generateCmd = vscode.commands.registerCommand('testpilot.generateTests', async (args) => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showWarningMessage('TestPilot: Open a JavaScript/TypeScript file first.');
+            vscode.window.showWarningMessage('TestPilot: Open a file first.');
             return;
         }
-        vscode.window.showInformationMessage(`TestPilot: Initiating test generation for ${editor.document.fileName}...`);
+
+        const selectedText = editor.document.getText(editor.selection);
+        const code = selectedText || editor.document.getText();
+        const filePath = editor.document.fileName;
+
+        vscode.window.showInformationMessage(`TestPilot: Processing test generation for ${filePath}...`);
     });
 
     const expandCmd = vscode.commands.registerCommand('testpilot.expandTests', async () => {
@@ -39,5 +74,6 @@ function deactivate() {
 
 module.exports = {
     activate,
-    deactivate
+    deactivate,
+    TestPilotCodeLensProvider
 };
