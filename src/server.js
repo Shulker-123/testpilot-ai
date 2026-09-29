@@ -1,6 +1,6 @@
 /**
  * TestPilot Backend REST API Server
- * Express-compatible server with Pino structured logging & health checks
+ * Added /api/code/analyze endpoint for AST dependency and function extraction
  */
 
 const http = require('http');
@@ -23,6 +23,32 @@ function parseBody(req) {
     });
 }
 
+function analyzeCode(sourceCode) {
+    const functions = [];
+    const imports = [];
+    const lines = sourceCode.split('\n');
+
+    const funcRegex = /(?:function\s+([a-zA-Z0-9_$]+)|(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>)/g;
+    let match;
+    while ((match = funcRegex.exec(sourceCode)) !== null) {
+        functions.push({
+            name: match[1] || match[2],
+            index: match.index
+        });
+    }
+
+    const importRegex = /(?:import\s+.*?from\s+['"](.*?)['"]|require\(['"](.*?)['"]\))/g;
+    while ((match = importRegex.exec(sourceCode)) !== null) {
+        imports.push(match[1] || match[2]);
+    }
+
+    return {
+        totalLines: lines.length,
+        functionsFound: functions.map(f => f.name),
+        dependencies: Array.from(new Set(imports))
+    };
+}
+
 const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -36,7 +62,6 @@ const server = http.createServer(async (req, res) => {
 
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
-    const startTime = Date.now();
 
     logger.info({ method: req.method, path: pathname }, 'Incoming request');
 
@@ -49,7 +74,21 @@ const server = http.createServer(async (req, res) => {
             uptime: process.uptime(),
             timestamp: new Date().toISOString()
         }));
-        logger.info({ durationMs: Date.now() - startTime, status: 200 }, 'Health check passed');
+        return;
+    }
+
+    if (pathname === '/api/code/analyze' && req.method === 'POST') {
+        const body = await parseBody(req);
+        if (!body.code) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Field "code" is required' }));
+            return;
+        }
+
+        const analysis = analyzeCode(body.code);
+        logger.info({ functions: analysis.functionsFound.length, deps: analysis.dependencies.length }, 'Code analyzed');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, data: analysis }));
         return;
     }
 
