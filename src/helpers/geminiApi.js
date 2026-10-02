@@ -116,16 +116,41 @@ ${data.relatedCode.map(r => r.code).join('\n')}
 \`\`\`
 ` : ''}
 
-Requirements:
-1. Import the function properly from "${data.pathRelativeToTest}".
-2. Use Jest syntax (describe, test/it, expect).
-3. Cover:
-   - Happy paths and typical valid inputs
-   - Boundary values and limits
-   - Edge cases: null, undefined, empty strings/arrays/objects, unexpected types, NaN
-   - Exception handling and error branches
-4. Mock any required external modules (like MongoDB or network calls) if they are invoked.
-5. Return ONLY executable JavaScript code for the test file. DO NOT include any markdown backticks, conversational preamble, explanations, or commentary.`;
+Write comprehensive, production-quality Jest unit tests for the following target function.
+
+Target Function Name: ${data.functionName}
+Target Relative Import Path for Test: ${data.pathRelativeToTest}
+Exported as Object: ${data.exportedAsObject}
+Is ES6 Syntax: ${data.isES6Syntax}
+
+Target Function Code:
+```javascript
+${data.functionCode}
+```
+
+${data.relatedCode && data.relatedCode.length > 0 ? `Related Helper Functions:
+```javascript
+${data.relatedCode.map(r => r.code).join('\n')}
+```
+` : ''}
+${data.testPlan ? `Target Test Scenarios (from AI Test Planner):
+${data.testPlan.map(s => `- [${s.category.toUpperCase()}] ${s.description} -> Expected: ${s.expectedResult}`).join('\n')}
+` : ''}
+
+Prompt Engineering Rules & Testing Directives:
+1. Module Import: Correctly import or require the target module from "${data.pathRelativeToTest}".
+2. Test Framework Compatibility: Target Jest syntax (describe, test/it, expect) with Vitest compatibility.
+3. Boundary & Edge Case Synthesis:
+   - Numerical limits: Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, 0, -1, NaN, Infinity.
+   - String & Collection limits: empty strings, multiline strings, empty arrays [], nested arrays, empty objects {}.
+   - Invalid & Nullish types: null, undefined, boolean in place of string/number.
+4. Asynchronous & Exception Handling:
+   - For async functions returning Promises: test resolution with 'await expect(...).resolves...' and rejection with 'await expect(...).rejects.toThrow()'.
+   - For synchronous functions throwing errors: assert 'expect(() => func(...)).toThrow()'.
+5. Automated Mocking & Isolation:
+   - Synthesize mocks using jest.mock(...) or jest.fn() for any external modules (filesystem fs/promises, HTTP axios/fetch, database clients).
+   - Ensure tests are completely isolated, deterministic, and execute without live network/database side effects.
+6. Return Format: Return ONLY valid, executable JavaScript test code. No Markdown markdown backticks, no conversational text.`;
 
             const rawResponse = await this.callGeminiWithFallback(prompt, customLogFunction);
             const cleaned = this.cleanCode(rawResponse);
