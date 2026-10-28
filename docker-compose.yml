@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  testpilot-backend:
+    build: .
+    container_name: testpilot-api
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    restart: unless-stopped
+    volumes:
+      - ./pythagora_tests:/app/pythagora_tests
