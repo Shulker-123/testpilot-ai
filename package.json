@@ -1,30 +1,110 @@
 {
   "name": "testpilot-ai",
-  "version": "0.0.79",
-  "author": {
-    "name": "Zvonimir Sabljic",
-    "email": "hi@pythagora.ai"
-  },
+  "displayName": "TestPilot AI",
+  "version": "1.0.0",
+  "publisher": "Shulker-123",
+  "description": "Automated unit test generation and coverage analysis engine for JavaScript/TypeScript powered by AST static analysis and LLMs.",
   "license": "ISC",
-  "description": "Automated unit test generation and coverage analysis engine for JavaScript/TypeScript.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Pythagora-io/pythagora"
+    "url": "https://github.com/Shulker-123/testpilot-ai"
   },
-  "homepage": "https://pythagora.ai/",
-  "main": "src/Pythagora.js",
-  "scripts": {
-    "publish-pythagora": "src/bin/publish.bash",
-    "prepublishOnly": "node src/bin/prepublish.js",
-    "postinstall": "node src/bin/postinstall.js",
-    "test": "npx jest ./pythagora_tests/ --coverage",
-    "generate-unit-tests": "npx pythagora --unit-tests --path ./src"
-  },
+  "main": "src/extension.js",
   "bin": {
-    "pythagora": "src/bin/run.js"
+    "testpilot": "src/bin/run.js"
   },
   "engines": {
-    "node": ">=14.x"
+    "vscode": "^1.80.0",
+    "node": ">=18.x"
+  },
+  "categories": [
+    "Testing",
+    "Programming Languages",
+    "Machine Learning"
+  ],
+  "activationEvents": [
+    "onCommand:testpilot.generateTests",
+    "onCommand:testpilot.expandTests",
+    "onCommand:testpilot.runTests",
+    "onLanguage:javascript",
+    "onLanguage:typescript"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "testpilot.generateTests",
+        "title": "TestPilot: Generate Unit Tests",
+        "category": "TestPilot"
+      },
+      {
+        "command": "testpilot.expandTests",
+        "title": "TestPilot: Expand Tests for Higher Coverage",
+        "category": "TestPilot"
+      },
+      {
+        "command": "testpilot.runTests",
+        "title": "TestPilot: Run Tests & Measure Coverage",
+        "category": "TestPilot"
+      },
+      {
+        "command": "testpilot.showPreview",
+        "title": "TestPilot: Preview Generated Tests",
+        "category": "TestPilot"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "testpilot.generateTests",
+          "group": "testing",
+          "when": "editorLangId == javascript || editorLangId == typescript"
+        },
+        {
+          "command": "testpilot.expandTests",
+          "group": "testing",
+          "when": "resourceExtname == .test.js || resourceExtname == .spec.js"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "testpilot-sidebar",
+          "title": "TestPilot",
+          "icon": "system_architecture.png"
+        }
+      ]
+    },
+    "views": {
+      "testpilot-sidebar": [
+        {
+          "type": "webview",
+          "id": "testpilot.resultsView",
+          "name": "Execution Results & Diagnostics"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "TestPilot Configuration",
+      "properties": {
+        "testpilot.model": {
+          "type": "string",
+          "default": "gemini-2.5-flash",
+          "description": "Target LLM model for unit test synthesis"
+        },
+        "testpilot.backendUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "TestPilot backend REST server endpoint"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "start:server": "node src/server.js",
+    "test": "npx jest ./pythagora_tests/benchmark/ --coverage",
+    "test:benchmark": "npx jest ./pythagora_tests/benchmark/",
+    "generate-unit-tests": "node src/scripts/unit.js --path ./src"
   },
   "dependencies": {
     "@mswjs/interceptors": "^0.19.2",
@@ -42,34 +122,15 @@
   "devDependencies": {
     "mongodb": "^5.6.0"
   },
-  "contributors": [
-    {
-      "name": "Zvonimir Sabljic",
-      "email": "hi@pythagora.ai"
-    },
-    {
-      "name": "Leon Ostrez",
-      "email": "hi@pythagora.ai"
-    }
-  ],
   "keywords": [
     "test",
     "testing",
     "automation",
-    "automated testing",
     "unit",
-    "unit testing",
-    "GPT",
-    "integration",
-    "integration testing",
-    "mock",
-    "api",
-    "http",
-    "MERN",
-    "MEAN",
-    "mongoose",
-    "mongodb",
-    "redis",
-    "express"
+    "jest",
+    "ai",
+    "gemini",
+    "ast",
+    "vscode-extension"
   ]
 }
